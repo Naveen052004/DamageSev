@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Image - Car Damage Detection</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <div class="max-w-md mx-auto bg-white rounded-lg shadow-lg p-8">
+            <h1 class="text-3xl font-bold text-center mb-4">Hello, {{ user_name }}!</h1>
+            <p class="text-center text-gray-600 mb-8">Please upload or take a picture of the damaged car</p>
+
+            <form action="{{ url_for('upload_image', action='detect_damage' if choosing == 'detect_damage' else 'detect_car') }}" method="POST" enctype="multipart/form-data" class="space-y-6">
+                <div class="space-y-4">
+                    <div class="flex items-center justify-center w-full">
+                        <label for="image" class="flex flex-col items-center justify-center w-full h-64 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+                            <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                                <svg class="w-10 h-10 mb-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                                </svg>
+                                <p class="mb-2 text-sm text-gray-500">Click to upload or drag and drop</p>
+                                <p class="text-xs text-gray-500">PNG, JPG or JPEG (MAX. 800x400px)</p>
+                            </div>
+                            <input id="image" name="image" type="file" accept="image/*" class="hidden" required onchange="previewImage(event)">
+                        </label>
+                    </div>
+                    
+                    <div class="text-center">
+                        <p class="text-sm text-gray-500">or</p>
+                    </div>
+
+                    <button type="button" onclick="startCamera()" class="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        Take Picture
+                    </button>
+                </div>
+
+                <!-- Preview Section -->
+                <div class="mt-4">
+                    <p class="text-center text-sm text-gray-600 mb-2">Preview:</p>
+                    <img id="preview" class="hidden w-full h-auto rounded-lg" />
+                </div>
+
+                <video id="camera" class="hidden w-full rounded-lg" autoplay></video>
+                <canvas id="canvas" class="hidden"></canvas>
+
+                <button type="submit" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    Upload and Analyze
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let stream = null;
+
+        // Preview uploaded image
+        function previewImage(event) {
+            const preview = document.getElementById('preview');
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = () => {
+                    preview.src = reader.result;
+                    preview.classList.remove('hidden');
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        async function startCamera() {
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                const video = document.getElementById('camera');
+                video.srcObject = stream;
+                video.classList.remove('hidden');
+                
+                // Add capture button
+                const captureBtn = document.createElement('button');
+                captureBtn.textContent = 'Capture Photo';
+                captureBtn.className = 'w-full mt-4 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500';
+                captureBtn.onclick = capturePhoto;
+                video.parentElement.insertBefore(captureBtn, video.nextSibling);
+            } catch (err) {
+                console.error('Error accessing camera:', err);
+                alert('Could not access camera. Please ensure you have granted camera permissions.');
+            }
+        }
+
+        function capturePhoto() {
+            const video = document.getElementById('camera');
+            const canvas = document.getElementById('canvas');
+            const context = canvas.getContext('2d');
+            const preview = document.getElementById('preview');
+
+            // Set canvas size to match video
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+
+            // Draw video frame to canvas
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            // Convert canvas to blob and create file input
+            canvas.toBlob(blob => {
+                const file = new File([blob], "camera-photo.jpg", { type: "image/jpeg" });
+                const dataTransfer = new DataTransfer();
+                dataTransfer.items.add(file);
+                document.getElementById('image').files = dataTransfer.files;
+
+                // Preview captured image
+                const reader = new FileReader();
+                reader.onload = () => {
+                    preview.src = reader.result;
+                    preview.classList.remove('hidden');
+                };
+                reader.readAsDataURL(blob);
+            }, 'image/jpeg');
+
+            // Stop camera stream
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+            }
+            video.classList.add('hidden');
+        }
+    </script>
+</body>
+</html>

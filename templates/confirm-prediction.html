@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Select Car Model - Car Damage Detection</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <div class="max-w-md mx-auto bg-white rounded-lg shadow-lg p-8">
+            <h1 class="text-3xl font-bold text-center mb-4">Damage Analysis</h1>
+            <p class="text-center text-gray-600 mb-8">Hello, {{ user_name }}!</p>
+
+            <div class="mb-8">
+                <img src="{{ url_for('static', filename=image_path) }}" alt="Uploaded car image" class="w-full rounded-lg shadow-md">
+            </div>
+
+            <div class="mb-8 p-4 bg-gray-50 rounded-lg">
+                <h2 class="text-xl font-semibold mb-4">Prediction Results</h2>
+                <ul class="space-y-4">
+                    {% for pred in prediction %}
+                    <li class="border rounded-lg p-4 bg-white shadow-sm">
+                        <p class="text-gray-700 font-medium">Damage Type: {{ pred.damage_type }}</p>
+                        <p class="text-gray-700">Confidence: {{ "%.1f"|format(pred.confidence * 100) }}%</p>
+                        <p class="text-gray-700">Coordinates: ({{ pred.coordinates[0] }}, {{ pred.coordinates[1] }}), ({{ pred.coordinates[2] }}, {{ pred.coordinates[3] }})</p>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+            <form id="confirmationForm" class="space-y-6" action="{{ url_for('upload', action = 'detect_car')}}" method = 'POST'>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Is this prediction correct?</label>
+                    <div class="space-y-2">
+                        <div class="flex items-center">
+                            <input type="radio" id="correct" name="is_correct" value="true" class="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300">
+                            <label for="correct" class="ml-3 block text-sm font-medium text-gray-700">Yes, the prediction is correct</label>
+                        </div>
+                        <div class="flex items-center">
+                            <input type="radio" id="incorrect" name="is_correct" value="false" class="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300">
+                            <label for="incorrect" class="ml-3 block text-sm font-medium text-gray-700">No, the prediction is incorrect</label>
+                        </div>
+                    </div>
+                </div>
+
+
+                <button type="submit"
+                        class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    Confirm and Continue
+                </button>
+            </form>
+        </div>
+    </div>
+
+</body>
+</html>
